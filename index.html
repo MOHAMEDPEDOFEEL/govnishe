@@ -1,1821 +1,975 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SyncRoom</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        :root {
-            --primary-color: #4F46E5;
-            --primary-hover: #4338CA;
-            --success-color: #10B981;
-            --danger-color: #EF4444;
-            --warning-color: #F59E0B;
-            --bg-light: #F9FAFB;
-            --bg-white: #FFFFFF;
-            --bg-secondary: #F3F4F6;
-            --border-color: #E5E7EB;
-            --text-primary: #111827;
-            --text-secondary: #6B7280;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        
-        html,
-        body {
-            height: 100%;
-            overflow: hidden;
-            background: var(--bg-light);
-            color: var(--text-primary);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            line-height: 1.6;
-        }
-        
-        .page {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            z-index: 1;
-            background: var(--bg-light);
-        }
-        
-        .page.active {
-            opacity: 1;
-            pointer-events: all;
-            transform: none;
-        }
-        
-        #page-call {
-            flex-direction: column;
-            align-items: stretch;
-            padding: 0;
-            background: var(--bg-light);
-        }
-        
-        .auth-card {
-            background: var(--bg-white);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 40px;
-            width: 100%;
-            max-width: 420px;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-        
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary-color), #6366F1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 20px;
-        }
-        
-        .logo-name {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        
-        .logo-name span {
-            color: var(--primary-color);
-        }
-        
-        .auth-card h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-        
-        .auth-card p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-        }
-        
-        .input-group {
-            position: relative;
-            margin-bottom: 16px;
-        }
-        
-        .input-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
-        
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            background: var(--bg-white);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        
-        .input-group input:focus,
-        .input-group select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .input-group input::placeholder {
-            color: var(--text-secondary);
-        }
-        
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 16px 0;
-        }
-        
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--primary-color);
-        }
-        
-        .checkbox-group label {
-            font-size: 14px;
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--border-color);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 24px;
-        }
-        
-        .btn-row {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-row .btn {
-            flex: 1;
-        }
-        
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 20px 0;
-            color: var(--text-secondary);
-            font-size: 13px;
-        }
-        
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-color);
-        }
-        
-        .code-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-        
-        .code-digit {
-            flex: 1;
-            height: 56px;
-            background: var(--bg-secondary);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        
-        .code-digit:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .code-digit.filled {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-        
-        .user-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-        }
-        
-        .user-badge-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success-color);
-            box-shadow: 0 0 4px var(--success-color);
-            animation: pulse-dot 2s infinite;
-        }
-        
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        
-        .call-header {
-            height: 56px;
-            flex-shrink: 0;
-            background: var(--bg-white);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 10;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        
-        .header-logo {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        
-        .header-logo span {
-            color: var(--primary-color);
-        }
-        
-        .room-chip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 13px;
-            color: var(--text-primary);
-        }
-        
-        .room-chip-label {
-            color: var(--text-secondary);
-            font-size: 11px;
-        }
-        
-        .room-chip-code {
-            color: var(--primary-color);
-            font-weight: 600;
-            letter-spacing: 2px;
-        }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .stat-chip {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        .stat-chip svg {
-            width: 14px;
-            height: 14px;
-            flex-shrink: 0;
-        }
-        
-        .stat-chip span {
-            color: var(--text-primary);
-        }
-        
-        .call-main {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            padding: 12px;
-        }
-        
-        .video-grid-main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-        
-        .video-tile-main {
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            background: var(--text-primary);
-            box-shadow: var(--shadow-lg);
-            position: relative;
-        }
-        
-        .video-tile-main video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        
-        .main-tile-label {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-            z-index: 5;
-        }
-        
-        #video-grid {
-            display: grid;
-            gap: 10px;
-            width: 100%;
-            height: 130px;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            transition: grid-template-columns 0.3s ease;
-        }
-        
-        .video-tile {
-            position: relative;
-            background: var(--text-primary);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transition: all 0.2s;
-            cursor: pointer;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .video-tile:hover {
-            transform: scale(1.02);
-            border-color: var(--primary-color);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .video-tile.selected {
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-        }
-        
-        .video-tile video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        
-        .tile-label {
-            position: absolute;
-            bottom: 6px;
-            left: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-            max-width: calc(100% - 50px);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        
-        .tile-muted {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background: var(--danger-color);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-        }
-        
-        .tile-muted.visible {
-            display: flex;
-        }
-        
-        .tile-muted svg {
-            width: 12px;
-            height: 12px;
-            fill: white;
-        }
-        
-        .tile-avatar {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary-color), #6366F1);
-            font-size: 32px;
-            font-weight: 700;
-            color: white;
-        }
-        
-        .tile-no-video {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary-color), #6366F1);
-        }
-        
-        .tile-actions {
-            position: absolute;
-            top: 0;
-            right: 0;
-            display: flex;
-            gap: 6px;
-            padding: 6px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10;
-        }
-        
-        .video-tile:hover .tile-actions {
-            opacity: 1;
-        }
-        
-        .tile-action-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background: rgba(239, 68, 68, 0.9);
-            border: none;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-        
-        .tile-action-btn:hover {
-            background: var(--danger-color);
-        }
-        
-        .tile-action-btn svg {
-            width: 12px;
-            height: 12px;
-        }
-        
-        .call-controls {
-            height: 70px;
-            flex-shrink: 0;
-            background: var(--bg-white);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 0 20px;
-            box-shadow: var(--shadow-lg);
-            flex-wrap: wrap;
-        }
-        
-        .ctrl-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-white);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .ctrl-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--text-primary);
-            transition: fill 0.2s;
-        }
-        
-        .ctrl-btn:hover {
-            background: var(--bg-secondary);
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .ctrl-btn:hover svg {
-            fill: var(--primary-color);
-        }
-        
-        .ctrl-btn.active {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .ctrl-btn.active svg {
-            fill: white;
-        }
-        
-        .ctrl-btn.off,
-        .ctrl-btn.danger {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: var(--danger-color);
-        }
-        
-        .ctrl-btn.off svg,
-        .ctrl-btn.danger svg {
-            fill: var(--danger-color);
-        }
-        
-        .ctrl-btn.danger:hover {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
-        }
-        
-        .ctrl-btn.danger:hover svg {
-            fill: white;
-        }
-        
-        .ctrl-label {
-            position: absolute;
-            bottom: -24px;
-            font-size: 10px;
-            color: var(--text-secondary);
-            white-space: nowrap;
-        }
-        
-        .ctrl-sep {
-            width: 1px;
-            height: 28px;
-            background: var(--border-color);
-            margin: 0 4px;
-        }
-        
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--text-primary);
-            color: white;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-size: 13px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 100;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        #toast.show {
-            opacity: 1;
-        }
-        
-        #connecting-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            background: rgba(249, 250, 251, 0.95);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        #connecting-overlay.show {
-            display: flex;
-        }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            animation: spin 0.8s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .connecting-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
-        .copy-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: none;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 4px 8px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .copy-btn:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            background: rgba(79, 70, 229, 0.05);
-        }
-        
-        .copy-btn svg {
-            width: 10px;
-            height: 10px;
-        }
-        
-        .error-msg {
-            font-size: 12px;
-            color: var(--danger-color);
-            margin-top: 6px;
-            display: none;
-        }
-        
-        .error-msg.show {
-            display: block;
-        }
-        
-        .modal {
-            position: fixed;
-            inset: 0;
-            z-index: 200;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .modal.show {
-            display: flex;
-            opacity: 1;
-        }
-        
-        .modal-content {
-            background: var(--bg-white);
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: var(--shadow-xl);
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        
-        .modal-header h2 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        
-        .modal-close:hover {
-            color: var(--text-primary);
-        }
-        
-        .modal-body {
-            margin: 16px 0;
-        }
-        
-        .room-item {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .room-item:hover {
-            background: white;
-            border-color: var(--primary-color);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .room-item-info {
-            flex: 1;
-        }
-        
-        .room-item-code {
-            font-weight: 600;
-            color: var(--primary-color);
-            font-size: 14px;
-        }
-        
-        .room-item-users {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-        
-        @media (max-width: 768px) {
-            .auth-card {
-                width: 90%;
-                padding: 30px;
-            }
-            
-            .code-digit {
-                height: 48px;
-                font-size: 20px;
-            }
-            
-            #video-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                height: 110px;
-            }
-            
-            .call-header {
-                height: 50px;
-                padding: 0 12px;
-            }
-            
-            .header-right {
-                gap: 8px;
-            }
-            
-            .stat-chip {
-                padding: 4px 8px;
-                font-size: 11px;
-            }
-            
-            .ctrl-btn {
-                width: 44px;
-                height: 44px;
-            }
-            
-            .call-controls {
-                height: 60px;
-                gap: 8px;
-            }
-            
-            .room-chip {
-                font-size: 11px;
-                padding: 4px 8px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .auth-card {
-                width: 100%;
-                max-width: 100%;
-                border-radius: 0;
-                padding: 20px;
-                margin: 0;
-            }
-            
-            .btn {
-                padding: 10px;
-                font-size: 13px;
-            }
-            
-            #video-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                height: 100px;
-            }
-            
-            .call-header {
-                flex-wrap: wrap;
-                height: auto;
-                min-height: 50px;
-            }
-            
-            .header-left,
-            .header-right {
-                flex-wrap: wrap;
-            }
-            
-            .ctrl-btn {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .ctrl-btn svg {
-                width: 18px;
-                height: 18px;
-            }
-            
-            .call-controls {
-                height: auto;
-                min-height: 55px;
-                padding: 8px 12px;
-                gap: 6px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncRoom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080c14;
+      --bg2:       #0d1220;
+      --bg3:       #121929;
+      --surface:   #161f30;
+      --surface2:  #1c2840;
+      --border:    #1e2e4a;
+      --accent:    #00c8ff;
+      --accent2:   #0077ff;
+      --accent-glow: rgba(0, 200, 255, 0.18);
+      --green:     #00e5a0;
+      --red:       #ff4466;
+      --yellow:    #ffcc00;
+      --text:      #ccd6f6;
+      --text2:     #6a7d9f;
+      --mono:      'Space Mono', monospace;
+      --sans:      'Syne', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    /* ── Grid texture overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Pages ── */
+    .page {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transform: translateY(18px);
+      transition: opacity .35s ease, transform .35s ease;
+      z-index: 1;
+    }
+    .page.active {
+      opacity: 1; pointer-events: all; transform: none;
+    }
+    #page-call {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 0;
+    }
+
+    /* ── Auth card ── */
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 52px 52px;
+      width: 420px;
+      position: relative;
+      box-shadow: 0 0 80px rgba(0,100,255,.07), 0 24px 80px rgba(0,0,0,.5);
+    }
+    .auth-card::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 36px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: #fff; }
+    .logo-name {
+      font-size: 18px; font-weight: 800; letter-spacing: -.5px;
+      color: #fff;
+    }
+    .logo-name span { color: var(--accent); }
+
+    .auth-card h1 {
+      font-size: 28px; font-weight: 800; color: #fff;
+      letter-spacing: -.5px; margin-bottom: 8px;
+    }
+    .auth-card p {
+      font-size: 14px; color: var(--text2); margin-bottom: 28px;
+      font-family: var(--mono);
+    }
+
+    .input-group { position: relative; margin-bottom: 14px; }
+    .input-group label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text2); margin-bottom: 8px;
+      font-family: var(--mono);
+    }
+    .input-group input {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; color: var(--text);
+      font-size: 15px; font-family: var(--mono);
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input-group input::placeholder { color: var(--text2); opacity: .6; }
+
+    .btn {
+      width: 100%; padding: 15px; border-radius: 10px;
+      font-size: 14px; font-weight: 700; letter-spacing: .5px;
+      font-family: var(--mono); cursor: pointer; border: none;
+      transition: all .18s ease; position: relative; overflow: hidden;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,200,255,.25);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(0,200,255,.38);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: var(--bg3); color: var(--text2);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--surface2); color: var(--text);
+      border-color: var(--accent);
+    }
+    .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0; color: var(--text2);
+      font-size: 11px; font-family: var(--mono); letter-spacing: 1px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Code digits ── */
+    .code-row {
+      display: flex; gap: 12px; margin-bottom: 28px;
+    }
+    .code-digit {
+      flex: 1; height: 72px;
+      background: var(--bg2); border: 1.5px solid var(--border);
+      border-radius: 12px; color: #fff;
+      font-size: 32px; font-weight: 700; font-family: var(--mono);
+      text-align: center; outline: none;
+      transition: border-color .2s, box-shadow .2s, transform .1s;
+    }
+    .code-digit:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      transform: scale(1.03);
+    }
+    .code-digit.filled {
+      border-color: var(--accent2);
+      color: var(--accent);
+    }
+
+    /* ── User greeting badge ── */
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 14px 6px 10px;
+      font-size: 12px; color: var(--text2); font-family: var(--mono);
+      margin-bottom: 28px;
+    }
+    .user-badge-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    /* ── Call page ── */
+    #page-call { background: var(--bg); }
+
+    .call-header {
+      height: 56px; flex-shrink: 0;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+      z-index: 10;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo { font-size: 15px; font-weight: 800; color: #fff; }
+    .header-logo span { color: var(--accent); }
+    .room-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 12px;
+      font-family: var(--mono); font-size: 13px; color: var(--text);
+    }
+    .room-chip-label { color: var(--text2); font-size: 11px; margin-right: 2px; }
+    .room-chip-code { color: var(--accent); font-weight: 700; letter-spacing: 4px; }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .stat-chip {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 12px;
+      font-family: var(--mono); font-size: 12px; color: var(--text2);
+    }
+    .stat-chip svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .stat-chip span { color: var(--text); }
+    .ping-good { color: var(--green) !important; }
+    .ping-ok   { color: var(--yellow) !important; }
+    .ping-bad  { color: var(--red) !important; }
+
+    .call-main {
+      flex: 1; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+
+    /* ── Video grid ── */
+    #video-grid {
+      display: grid;
+      gap: 12px;
+      width: 100%; height: 100%;
+      grid-template-columns: repeat(1, 1fr);
+      transition: grid-template-columns .3s ease;
+    }
+
+    .video-tile {
+      position: relative;
+      background: var(--surface);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      transition: border-color .2s;
+    }
+    .video-tile:hover { border-color: var(--accent2); }
+    .video-tile.local { border-color: var(--accent2); }
+    .video-tile.local::after {
+      content: '';
+      position: absolute; inset: 0; border-radius: 14px;
+      box-shadow: inset 0 0 0 1.5px var(--accent2);
+      pointer-events: none;
+    }
+
+    .video-tile video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tile-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.65) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .tile-label {
+      position: absolute; bottom: 10px; left: 12px;
+      font-size: 12px; font-weight: 700; font-family: var(--mono);
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,.8);
+      max-width: calc(100% - 80px);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .tile-ping {
+      position: absolute; bottom: 10px; right: 10px;
+      font-family: var(--mono); font-size: 10px;
+      background: rgba(0,0,0,.6); border-radius: 5px;
+      padding: 2px 7px; color: var(--green);
+    }
+
+    .tile-muted {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(255,68,102,.85);
+      display: none; align-items: center; justify-content: center;
+    }
+    .tile-muted.visible { display: flex; }
+    .tile-muted svg { width: 14px; height: 14px; fill: #fff; }
+
+    .tile-no-video {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface);
+    }
+    .tile-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; color: #fff;
+    }
+
+    /* ── Controls bar ── */
+    .call-controls {
+      height: 80px; flex-shrink: 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+
+    .ctrl-btn {
+      width: 52px; height: 52px; border-radius: 14px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .18s ease;
+      position: relative;
+    }
+    .ctrl-btn svg { width: 22px; height: 22px; fill: var(--text); transition: fill .18s; }
+    .ctrl-btn:hover {
+      background: var(--surface2); border-color: var(--accent2);
+      transform: translateY(-2px);
+    }
+    .ctrl-btn:hover svg { fill: #fff; }
+    .ctrl-btn.active {
+      background: var(--surface2); border-color: var(--accent);
+    }
+    .ctrl-btn.active svg { fill: var(--accent); }
+    .ctrl-btn.off {
+      background: rgba(255,68,102,.12); border-color: var(--red);
+    }
+    .ctrl-btn.off svg { fill: var(--red); }
+    .ctrl-btn.danger {
+      background: rgba(255,68,102,.12); border-color: var(--red);
+    }
+    .ctrl-btn.danger svg { fill: var(--red); }
+    .ctrl-btn.danger:hover {
+      background: var(--red); border-color: var(--red);
+      box-shadow: 0 6px 20px rgba(255,68,102,.4);
+    }
+    .ctrl-btn.danger:hover svg { fill: #fff; }
+
+    .ctrl-label {
+      position: absolute; bottom: -22px;
+      font-size: 10px; font-family: var(--mono); color: var(--text2);
+      white-space: nowrap;
+    }
+
+    .ctrl-sep { width: 1px; height: 32px; background: var(--border); margin: 0 6px; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; color: var(--text2);
+    }
+    .empty-state svg { width: 48px; height: 48px; opacity: .3; }
+    .empty-state p { font-size: 13px; font-family: var(--mono); opacity: .6; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 20px;
+      font-family: var(--mono); font-size: 13px; color: var(--text);
+      opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 100;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── Connecting overlay ── */
+    #connecting-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(8,12,20,.9);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+    }
+    #connecting-overlay.show { display: flex; }
+    .spinner {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .connecting-text {
+      font-family: var(--mono); font-size: 13px; color: var(--text2);
+    }
+
+    /* ── Copy button ── */
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid var(--border);
+      border-radius: 7px; padding: 5px 11px;
+      font-family: var(--mono); font-size: 11px; color: var(--text2);
+      cursor: pointer; transition: all .15s;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn svg { width: 11px; height: 11px; }
+
+    /* ── Error ── */
+    .error-msg {
+      font-family: var(--mono); font-size: 12px; color: var(--red);
+      margin-top: 8px; display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
 </head>
 <body>
 
-    <div id="page-username" class="page active">
-        <div class="auth-card">
-            <div class="logo">
-                <div class="logo-icon">SR</div>
-                <div class="logo-name">Sync<span>Room</span></div>
-            </div>
-            <h1>Добро пожаловать</h1>
-            <p>Выберите ваше имя для отображения</p>
-            
-            <div class="input-group">
-                <label>Отображаемое имя</label>
-                <input type="text" id="username-input" placeholder="например alex_dev" maxlength="20">
-            </div>
-            <div class="error-msg" id="username-error">Имя не может быть пустым</div>
-            
-            <div class="btn-group">
-                <button class="btn btn-primary" id="username-btn">Продолжить →</button>
-            </div>
-        </div>
+<!-- ═══════════════════════════ PAGE: USERNAME ═══════════════════════════ -->
+<div id="page-username" class="page active">
+  <div class="auth-card">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      </div>
+      <div class="logo-name">Sync<span>Room</span></div>
     </div>
 
-    <div id="page-lobby" class="page">
-        <div class="auth-card">
-            <div class="logo">
-                <div class="logo-icon">SR</div>
-                <div class="logo-name">Sync<span>Room</span></div>
-            </div>
-            
-            <div class="user-badge">
-                <div class="user-badge-dot"></div>
-                <span id="lobby-username">anonymous</span>
-            </div>
-            
-            <h1>Присоединиться к комнате</h1>
-            <p>Введите 4-значный код комнаты</p>
-            
-            <div class="code-row">
-                <input class="code-digit" id="d0" type="text" inputmode="numeric" maxlength="1">
-                <input class="code-digit" id="d1" type="text" inputmode="numeric" maxlength="1">
-                <input class="code-digit" id="d2" type="text" inputmode="numeric" maxlength="1">
-                <input class="code-digit" id="d3" type="text" inputmode="numeric" maxlength="1">
-            </div>
-            <div class="error-msg" id="lobby-error">Введите все 4 цифры</div>
-            
-            <div class="btn-row">
-                <button class="btn btn-secondary" id="create-btn">⊕ Создать</button>
-                <button class="btn btn-primary" id="join-btn">→ Войти</button>
-            </div>
-            
-            <div class="divider">или</div>
-            
-            <button class="btn btn-secondary" id="browse-public-btn" style="margin-bottom: 10px;">🔍 Найти комнату</button>
-            <button class="btn btn-secondary" id="change-name-btn">Изменить имя</button>
-        </div>
+    <h1>Welcome aboard</h1>
+    <p>// choose your display name</p>
+
+    <div class="input-group">
+      <label>Display Name</label>
+      <input type="text" id="username-input" placeholder="e.g. alex_dev" maxlength="20" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="error-msg" id="username-error">Name cannot be empty</div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="username-btn">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: LOBBY ═══════════════════════════ -->
+<div id="page-lobby" class="page">
+  <div class="auth-card">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      </div>
+      <div class="logo-name">Sync<span>Room</span></div>
     </div>
 
-    <div id="page-call" class="page">
-        <div class="call-header">
-            <div class="header-left">
-                <div class="header-logo">Sync<span>Room</span></div>
-                <div class="room-chip">
-                    <span class="room-chip-label">ROOM</span>
-                    <span class="room-chip-code" id="header-room-code">----</span>
-                    <button class="copy-btn" id="copy-code-btn" title="Copy code">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="stat-chip">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                    </svg>
-                    <span id="stat-participants">1 / 10</span>
-                </div>
-                <div class="stat-chip">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                    </svg>
-                    <span id="stat-ping">-- ms</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="call-main">
-            <div class="video-grid-main" id="video-main-container">
-                <div class="video-tile-main" id="main-video-tile">
-                    <div class="tile-no-video">
-                        <div class="tile-avatar" id="main-avatar">S</div>
-                    </div>
-                    <span class="main-tile-label" id="main-tile-label">Вы</span>
-                </div>
-            </div>
-            
-            <div id="video-grid"></div>
-        </div>
-
-        <div class="call-controls">
-            <div style="position:relative">
-                <button class="ctrl-btn active" id="btn-mic" title="Микрофон">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
-                    <span class="ctrl-label">Mic</span>
-                </button>
-            </div>
-            <div style="position:relative">
-                <button class="ctrl-btn active" id="btn-cam" title="Камера">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M23 7l-7 5 7 5V7z"/>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                    </svg>
-                    <span class="ctrl-label">Camera</span>
-                </button>
-            </div>
-            <div style="position:relative">
-                <button class="ctrl-btn" id="btn-flip" title="Повернуть камеру">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 4v6h6M23 20v-6h-6"/>
-                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64M3.51 15A9 9 0 0 0 18.36 18.36"/>
-                    </svg>
-                    <span class="ctrl-label">Flip</span>
-                </button>
-            </div>
-
-            <div class="ctrl-sep"></div>
-
-            <div style="position:relative">
-                <button class="ctrl-btn" id="btn-screen" title="Поделиться экраном">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                    <span class="ctrl-label">Screen</span>
-                </button>
-            </div>
-            
-            <div style="position:relative">
-                <button class="ctrl-btn" id="btn-record" title="Записать">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <circle cx="12" cy="12" r="4" fill="currentColor"/>
-                    </svg>
-                    <span class="ctrl-label">Record</span>
-                </button>
-            </div>
-
-            <div class="ctrl-sep"></div>
-
-            <div style="position:relative">
-                <button class="ctrl-btn danger" id="btn-leave" title="Выйти из вызова">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.32 9.9a16 16 0 0 0 6.18 6.18"/>
-                        <line x1="23" y1="1" x2="1" y2="23" stroke="currentColor" stroke-width="2" fill="none"/>
-                    </svg>
-                    <span class="ctrl-label">Leave</span>
-                </button>
-            </div>
-        </div>
+    <div class="user-badge">
+      <div class="user-badge-dot"></div>
+      <span id="lobby-username">anonymous</span>
     </div>
 
-    <div id="create-room-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Создать комнату</h2>
-                <button class="modal-close" onclick="closeModal('create-room-modal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="public-checkbox" checked>
-                    <label for="public-checkbox">Публичная комната (видна в списке)</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="record-checkbox">
-                    <label for="record-checkbox">Включить запись при присоединении</label>
-                </div>
-                <button class="btn btn-primary" id="confirm-create-btn" style="margin-top: 20px;">Создать комнату</button>
-            </div>
-        </div>
+    <h1>Join a room</h1>
+    <p>// enter 4-digit room code</p>
+
+    <div class="code-row">
+      <input class="code-digit" id="d0" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+      <input class="code-digit" id="d1" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+      <input class="code-digit" id="d2" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+      <input class="code-digit" id="d3" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+    </div>
+    <div class="error-msg" id="lobby-error">Enter all 4 digits</div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="create-btn">⊕ Create Room</button>
+      <button class="btn btn-primary"   id="join-btn">→ Join</button>
     </div>
 
-    <div id="browse-rooms-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Найти комнату</h2>
-                <button class="modal-close" onclick="closeModal('browse-rooms-modal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div id="rooms-list" style="max-height: 400px; overflow-y: auto;"></div>
-                <p id="no-rooms" style="text-align: center; color: var(--text-secondary); padding: 20px; display: none;">Публичных комнат не найдено</p>
-            </div>
-        </div>
+    <div class="divider">or</div>
+
+    <button class="btn btn-secondary" id="change-name-btn" style="width:100%">Change name</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: CALL ═══════════════════════════ -->
+<div id="page-call" class="page">
+
+  <!-- Header -->
+  <div class="call-header">
+    <div class="header-left">
+      <div class="header-logo">Sync<span>Room</span></div>
+      <div class="room-chip">
+        <span class="room-chip-label">ROOM</span>
+        <span class="room-chip-code" id="header-room-code">----</span>
+        <button class="copy-btn" id="copy-code-btn" title="Copy code">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          copy
+        </button>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span id="stat-participants">1 / 10</span>
+      </div>
+      <div class="stat-chip" id="ping-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span id="stat-ping">-- ms</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video area -->
+  <div class="call-main">
+    <div id="video-grid"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="call-controls">
+    <div style="position:relative">
+      <button class="ctrl-btn active" id="btn-mic" title="Toggle mic">
+        <svg id="icon-mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8"  y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        <span class="ctrl-label">Mic</span>
+      </button>
+    </div>
+    <div style="position:relative">
+      <button class="ctrl-btn active" id="btn-cam" title="Toggle camera">
+        <svg id="icon-cam" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span class="ctrl-label">Camera</span>
+      </button>
     </div>
 
-    <div id="connecting-overlay">
-        <div class="spinner"></div>
-        <div class="connecting-text" id="connecting-text">Подключение...</div>
+    <div class="ctrl-sep"></div>
+
+    <div style="position:relative">
+      <button class="ctrl-btn" id="btn-screen" title="Share screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span class="ctrl-label">Screen</span>
+      </button>
     </div>
 
-    <div id="toast"></div>
+    <div class="ctrl-sep"></div>
 
-    <script type="module">
-        import { joinRoom } from 'https://esm.sh/trystero@0.21.0/torrent';
+    <div style="position:relative">
+      <button class="ctrl-btn danger" id="btn-leave" title="Leave call">
+        <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.32 9.9a16 16 0 0 0 6.18 6.18"/><line x1="23" y1="1" x2="1" y2="23" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        <span class="ctrl-label">Leave</span>
+      </button>
+    </div>
+  </div>
+</div>
 
-        // ── Audio context for sounds ──
-        let audioContext = null;
-        
-        function playSound(frequency = 400, duration = 100) {
-            try {
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const now = audioContext.currentTime;
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.frequency.value = frequency;
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
-                osc.start(now);
-                osc.stop(now + duration / 1000);
-            } catch {}
-        }
+<!-- ═══ Connecting overlay ═══ -->
+<div id="connecting-overlay">
+  <div class="spinner"></div>
+  <div class="connecting-text" id="connecting-text">Connecting to room...</div>
+</div>
 
-        // ── State ────────────────────────────────────────────
-        let username = localStorage.getItem('syncroom-username') || '';
-        let room = null;
-        let localStream = null;
-        let screenStream = null;
-        let roomCode = '';
-        let isPublic = false;
-        let isHost = false;
-        let peers = {};
-        let micOn = true;
-        let camOn = true;
-        let screenOn = false;
-        let recordingOn = false;
-        let mediaRecorder = null;
-        let recordedChunks = [];
-        let cameraFront = true;
-        let selectedPeerId = null;
-        let pinnedPeerId = null;
-        let pingTimers = {};
-        let sendPingFn = null;
-        let sendNameFn = null;
-        let publicRooms = [];
+<!-- ═══ Toast ═══ -->
+<div id="toast"></div>
 
-        // ── DOM helpers ──────────────────────────────────────
-        const $ = id => document.getElementById(id);
-        const ce = (tag, cls) => {
-            const el = document.createElement(tag);
-            if (cls) el.className = cls;
-            return el;
-        };
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            $('page-' + id).classList.add('active');
-        }
+<script type="module">
+import { joinRoom } from 'https://esm.sh/trystero@0.21.0/torrent';
 
-        function showModal(id) {
-            const modal = $(id);
-            if (modal) {
-                modal.classList.add('show');
-                playSound(600, 50);
-            }
-        }
+// ── State ──────────────────────────────────────────────────────────────────
+let username    = localStorage.getItem('syncroom-username') || '';
+let room        = null;
+let localStream = null;
+let screenStream = null;
+let roomCode    = '';
+let peers       = {};   // peerId → { name, stream, ping, videoEl, pingEl }
+let micOn       = true;
+let camOn       = true;
+let screenOn    = false;
+let pingTimers  = {};
+let sendPingFn  = null;
+let sendNameFn  = null;
 
-        function closeModal(id) {
-            const modal = $(id);
-            if (modal) {
-                modal.classList.remove('show');
-                playSound(400, 50);
-            }
-        }
+// ── DOM helpers ────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
 
-        function showOverlay(msg) {
-            $('connecting-text').textContent = msg || 'Подключение...';
-            $('connecting-overlay').classList.add('show');
-        }
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-' + id).classList.add('active');
+}
+function showOverlay(msg) {
+  $('connecting-text').textContent = msg || 'Connecting...';
+  $('connecting-overlay').classList.add('show');
+}
+function hideOverlay() {
+  $('connecting-overlay').classList.remove('show');
+}
+function toast(msg, dur = 2500) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), dur);
+}
 
-        function hideOverlay() {
-            $('connecting-overlay').classList.remove('show');
-        }
+// ── Init ───────────────────────────────────────────────────────────────────
+if (username) {
+  $('lobby-username').textContent = username;
+  showPage('lobby');
+} else {
+  showPage('username');
+}
 
-        function toast(msg, dur = 2500) {
-            const el = $('toast');
-            el.textContent = msg;
-            el.classList.add('show');
-            clearTimeout(el._t);
-            el._t = setTimeout(() => el.classList.remove('show'), dur);
-            playSound(800, 50);
-        }
+// ── Username page ──────────────────────────────────────────────────────────
+$('username-input').addEventListener('keydown', e => { if (e.key==='Enter') $('username-btn').click(); });
 
-        // ── Init ──────────────────────────────────────────────
-        if (username) {
-            $('lobby-username').textContent = username;
-            showPage('lobby');
-        } else {
-            showPage('username');
-        }
+$('username-btn').addEventListener('click', () => {
+  const val = $('username-input').value.trim();
+  if (!val) { $('username-error').classList.add('show'); return; }
+  $('username-error').classList.remove('show');
+  username = val;
+  localStorage.setItem('syncroom-username', username);
+  $('lobby-username').textContent = username;
+  showPage('lobby');
+});
 
-        // ── Username page ────────────────────────────────────
-        $('username-input').addEventListener('keydown', e => {
-            if (e.key === 'Enter') $('username-btn').click();
-        });
+$('change-name-btn').addEventListener('click', () => {
+  $('username-input').value = username;
+  showPage('username');
+});
 
-        $('username-btn').addEventListener('click', () => {
-            const val = $('username-input').value.trim();
-            if (!val) {
-                $('username-error').classList.add('show');
-                return;
-            }
-            $('username-error').classList.remove('show');
-            username = val;
-            localStorage.setItem('syncroom-username', username);
-            $('lobby-username').textContent = username;
-            showPage('lobby');
-            playSound(700, 100);
-        });
+// ── Code digit inputs ──────────────────────────────────────────────────────
+const digits = [0,1,2,3].map(i => $('d'+i));
 
-        $('change-name-btn').addEventListener('click', () => {
-            $('username-input').value = username;
-            showPage('username');
-        });
+digits.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    const v = inp.value.replace(/[^0-9]/g,'');
+    inp.value = v ? v[v.length-1] : '';
+    inp.classList.toggle('filled', !!inp.value);
+    if (inp.value && i < 3) digits[i+1].focus();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace') {
+      if (!inp.value && i > 0) { digits[i-1].value=''; digits[i-1].classList.remove('filled'); digits[i-1].focus(); }
+      inp.classList.remove('filled');
+    }
+    if (e.key === 'Enter') $('join-btn').click();
+  });
+  inp.addEventListener('paste', e => {
+    const data = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,4);
+    if (data.length === 4) {
+      digits.forEach((d,j) => { d.value = data[j]||''; d.classList.toggle('filled', !!d.value); });
+      digits[3].focus();
+    }
+    e.preventDefault();
+  });
+});
 
-        // ── Code digit inputs ─────────────────────────────────
-        const digits = [0, 1, 2, 3].map(i => $('d' + i));
-        digits.forEach((inp, i) => {
-            inp.addEventListener('input', () => {
-                const v = inp.value.replace(/[^0-9]/g, '');
-                inp.value = v ? v[v.length - 1] : '';
-                inp.classList.toggle('filled', !!inp.value);
-                if (inp.value && i < 3) digits[i + 1].focus();
-            });
-            inp.addEventListener('keydown', e => {
-                if (e.key === 'Backspace') {
-                    if (!inp.value && i > 0) {
-                        digits[i - 1].value = '';
-                        digits[i - 1].classList.remove('filled');
-                        digits[i - 1].focus();
-                    }
-                    inp.classList.remove('filled');
-                }
-                if (e.key === 'Enter') $('join-btn').click();
-            });
-        });
+function getCode() { return digits.map(d => d.value).join(''); }
 
-        function getCode() {
-            return digits.map(d => d.value).join('');
-        }
+$('create-btn').addEventListener('click', () => {
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  digits.forEach((d,i) => { d.value = code[i]; d.classList.add('filled'); });
+  enterRoom(code);
+});
 
-        $('create-btn').addEventListener('click', () => {
-            showModal('create-room-modal');
-        });
+$('join-btn').addEventListener('click', () => {
+  const code = getCode();
+  if (code.length < 4) { $('lobby-error').classList.add('show'); return; }
+  $('lobby-error').classList.remove('show');
+  enterRoom(code);
+});
 
-        $('confirm-create-btn').addEventListener('click', () => {
-            const code = String(Math.floor(1000 + Math.random() * 9000));
-            isPublic = $('public-checkbox').checked;
-            recordingOn = $('record-checkbox').checked;
-            digits.forEach((d, i) => {
-                d.value = code[i];
-                d.classList.add('filled');
-            });
-            closeModal('create-room-modal');
-            enterRoom(code);
-        });
+// ── Enter room ─────────────────────────────────────────────────────────────
+async function enterRoom(code) {
+  showOverlay('Requesting camera & mic...');
+  roomCode = code;
 
-        $('browse-public-btn').addEventListener('click', () => {
-            loadPublicRooms();
-            showModal('browse-rooms-modal');
-        });
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+      toast('📷 Camera unavailable — audio only');
+    } catch {
+      hideOverlay();
+      toast('⚠ Could not access microphone');
+      return;
+    }
+  }
 
-        $('join-btn').addEventListener('click', () => {
-            const code = getCode();
-            if (code.length < 4) {
-                $('lobby-error').classList.add('show');
-                return;
-            }
-            $('lobby-error').classList.remove('show');
-            enterRoom(code);
-        });
+  $('header-room-code').textContent = code;
+  $('copy-code-btn').onclick = () => { navigator.clipboard.writeText(code); toast('Room code copied!'); };
 
-        // ── Enter room ────────────────────────────────────────
-        async function enterRoom(code) {
-            showOverlay('Запрашиваем доступ к камере и микрофону...');
-            roomCode = code;
-            isHost = true;
+  addLocalTile();
+  showOverlay('Joining room ' + code + '...');
 
-            try {
-                const constraints = {
-                    video: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: 30 }
-                    },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
-                };
-                localStream = await navigator.mediaDevices.getUserMedia(constraints);
-            } catch {
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({
-                        video: false,
-                        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-                    });
-                    toast('📷 Камера недоступна — только аудио');
-                } catch {
-                    hideOverlay();
-                    toast('⚠ Не удалось получить доступ к микрофону');
-                    return;
-                }
-            }
+  // ── Join Trystero room ──
+  room = joinRoom({ appId: 'syncroom-v1-prod' }, code);
 
-            $('header-room-code').textContent = code;
-            $('copy-code-btn').onclick = () => {
-                navigator.clipboard.writeText(code);
-                toast('Код комнаты скопирован!');
-            };
+  const [sendPing, onPing]     = room.makeAction('ping');
+  const [sendPong, onPong]     = room.makeAction('pong');
+  const [sendName, onName]     = room.makeAction('name');
+  const [sendMeta, onMeta]     = room.makeAction('meta');
 
-            addLocalTile();
-            showOverlay('Присоединение к комнате ' + code + '...');
+  sendPingFn = sendPing;
+  sendNameFn = sendName;
 
-            room = joinRoom({ appId: 'syncroom-v1-prod' }, code);
-            const [sendPing, onPing] = room.makeAction('ping');
-            const [sendPong, onPong] = room.makeAction('pong');
-            const [sendName, onName] = room.makeAction('name');
-            const [sendMeta, onMeta] = room.makeAction('meta');
+  // ── Peer join ──
+  room.onPeerJoin(peerId => {
+    if (Object.keys(peers).length >= 9) {
+      toast('Room is full (10/10)');
+      return;
+    }
+    peers[peerId] = { name: 'Peer…', stream: null, ping: null };
+    addRemoteTile(peerId);
+    // share local stream
+    room.addStream(localStream, peerId);
+    // introduce ourselves
+    sendName(username, peerId);
+    // start pinging
+    startPing(peerId);
+    updateStats();
+    toast('Someone joined the room');
+  });
 
-            sendPingFn = sendPing;
-            sendNameFn = sendName;
+  // ── Peer leave ──
+  room.onPeerLeave(peerId => {
+    clearInterval(pingTimers[peerId]);
+    delete pingTimers[peerId];
+    removeTile(peerId);
+    delete peers[peerId];
+    updateStats();
+    toast('Someone left the room');
+  });
 
-            // ── Peer join ──
-            room.onPeerJoin(peerId => {
-                if (Object.keys(peers).length >= 9) {
-                    toast('Комната заполнена (10/10)');
-                    return;
-                }
-                peers[peerId] = { name: 'Пир…', stream: null, ping: null, muted: false };
-                addRemoteTile(peerId);
-                room.addStream(localStream, peerId);
-                sendName(username, peerId);
-                startPing(peerId);
-                updateStats();
-                toast('Кто-то присоединился');
-                playSound(500, 150);
-            });
+  // ── Receive stream ──
+  room.onPeerStream((stream, peerId) => {
+    if (!peers[peerId]) peers[peerId] = { name: 'Peer', stream: null, ping: null };
+    peers[peerId].stream = stream;
+    attachStream(peerId, stream);
+  });
 
-            // ── Peer leave ──
-            room.onPeerLeave(peerId => {
-                clearInterval(pingTimers[peerId]);
-                delete pingTimers[peerId];
-                removeTile(peerId);
-                delete peers[peerId];
-                if (pinnedPeerId === peerId) {
-                    pinnedPeerId = null;
-                    updateMainVideo();
-                }
-                updateStats();
-                toast('Кто-то вышел');
-                playSound(300, 150);
-            });
+  // ── Receive name ──
+  onName((name, peerId) => {
+    if (!peers[peerId]) peers[peerId] = { name, stream: null, ping: null };
+    peers[peerId].name = name;
+    const label = document.querySelector(`#tile-${CSS.escape(peerId)} .tile-label`);
+    if (label) label.textContent = name;
+  });
 
-            // ── Receive stream ──
-            room.onStream((stream, peerId) => {
-                if (!peers[peerId]) peers[peerId] = { name: 'Пир', stream: null, ping: null, muted: false };
-                peers[peerId].stream = stream;
-                attachStream(peerId, stream);
-            });
+  // ── Ping / pong ──
+  onPing((data, peerId) => {
+    sendPong({ ts: data.ts }, peerId);
+  });
+  onPong((data, peerId) => {
+    const rtt = Date.now() - data.ts;
+    if (peers[peerId]) {
+      peers[peerId].ping = rtt;
+      const el = document.querySelector(`#tile-${CSS.escape(peerId)} .tile-ping`);
+      if (el) {
+        el.textContent = rtt + ' ms';
+        el.style.color = rtt < 80 ? 'var(--green)' : rtt < 200 ? 'var(--yellow)' : 'var(--red)';
+      }
+    }
+    updateStats();
+  });
 
-            // ── Receive name ──
-            onName((name, peerId) => {
-                if (!peers[peerId]) peers[peerId] = { name, stream: null, ping: null, muted: false };
-                peers[peerId].name = name;
-                const label = document.querySelector(`#tile-${CSS.escape(peerId)} .tile-label`);
-                if (label) label.textContent = name;
-                updateMainVideo();
-            });
+  showPage('call');
+  hideOverlay();
+  updateStats();
+  updateGrid();
+}
 
-            // ── Ping / pong ──
-            onPing((data, peerId) => {
-                sendPong({ ts: data.ts }, peerId);
-            });
+function startPing(peerId) {
+  pingTimers[peerId] = setInterval(() => {
+    if (sendPingFn) sendPingFn({ ts: Date.now() }, peerId);
+  }, 2000);
+}
 
-            onPong((data, peerId) => {
-                const rtt = Date.now() - data.ts;
-                if (peers[peerId]) {
-                    peers[peerId].ping = rtt;
-                }
-                updateStats();
-            });
+// ── Video tiles ────────────────────────────────────────────────────────────
+function addLocalTile() {
+  const grid = $('video-grid');
+  grid.innerHTML = '';
 
-            if (recordingOn) {
-                startRecording();
-            }
+  const tile = makeTile('local', username + ' (you)');
+  tile.classList.add('local');
 
-            showPage('call');
-            hideOverlay();
-            updateStats();
-            updateGrid();
-        }
+  const video = document.createElement('video');
+  video.autoplay = true; video.muted = true; video.playsinline = true;
+  video.srcObject = localStream;
 
-        function startPing(peerId) {
-            pingTimers[peerId] = setInterval(() => {
-                if (sendPingFn) sendPingFn({ ts: Date.now() }, peerId);
-            }, 2000);
-        }
+  const overlay  = document.createElement('div'); overlay.className = 'tile-overlay';
+  const label    = document.createElement('div'); label.className = 'tile-label'; label.textContent = username + ' (you)';
+  const muteIcon = document.createElement('div'); muteIcon.className = 'tile-muted'; muteIcon.id = 'local-mute';
+  muteIcon.innerHTML = `<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23" stroke="white" stroke-width="2"/><path fill="white" d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path fill="none" stroke="white" stroke-width="2" d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line stroke="white" stroke-width="2" x1="12" y1="19" x2="12" y2="23"/><line stroke="white" stroke-width="2" x1="8" y1="23" x2="16" y2="23"/></svg>`;
 
-        // ── Video tiles ───────────────────────────────────────
-        function addLocalTile() {
-            const container = $('video-main-container');
-            const mainTile = $('main-video-tile');
-            mainTile.innerHTML = '';
-            
-            const video = ce('video');
-            video.autoplay = true;
-            video.muted = true;
-            video.playsinline = true;
-            video.srcObject = localStream;
-            
-            const label = ce('span', 'main-tile-label');
-            label.id = 'main-tile-label';
-            label.textContent = username + ' (вы)';
-            
-            mainTile.appendChild(video);
-            mainTile.appendChild(label);
-            $('main-avatar').textContent = username[0].toUpperCase();
-            pinnedPeerId = null;
-        }
+  tile.appendChild(video);
+  tile.appendChild(overlay);
+  tile.appendChild(label);
+  tile.appendChild(muteIcon);
+  grid.appendChild(tile);
+}
 
-        function addRemoteTile(peerId) {
-            const grid = $('video-grid');
-            const tile = ce('div', 'video-tile');
-            tile.id = 'tile-' + peerId;
-            
-            const video = ce('video');
-            video.autoplay = true;
-            video.playsinline = true;
-            
-            const label = ce('div', 'tile-label');
-            label.textContent = peers[peerId]?.name || 'Подключение…';
-            
-            const muted = ce('div', 'tile-muted');
-            muted.innerHTML = `<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23" stroke="white" stroke-width="2"/><path fill="white" d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>`;
-            
-            tile.appendChild(video);
-            tile.appendChild(label);
-            tile.appendChild(muted);
-            
-            tile.addEventListener('click', () => {
-                pinnedPeerId = peerId;
-                updateMainVideo();
-                playSound(600, 80);
-            });
-            
-            grid.appendChild(tile);
-            updateGrid();
-        }
+function makeTile(peerId, name) {
+  const tile = document.createElement('div');
+  tile.className = 'video-tile';
+  tile.id = 'tile-' + peerId;
+  return tile;
+}
 
-        function attachStream(peerId, stream) {
-            const tile = document.getElementById('tile-' + peerId);
-            if (!tile) return;
-            
-            const video = tile.querySelector('video');
-            if (video) {
-                video.srcObject = stream;
-            }
-            updateMainVideo();
-        }
+function addRemoteTile(peerId) {
+  const grid = $('video-grid');
+  const name = peers[peerId]?.name || 'Connecting…';
+  const tile = makeTile(peerId, name);
 
-        function removeTile(peerId) {
-            const el = document.getElementById('tile-' + peerId);
-            if (el) el.remove();
-            updateGrid();
-        }
+  // placeholder while stream loads
+  const noVid = document.createElement('div'); noVid.className = 'tile-no-video'; noVid.id = 'novid-'+peerId;
+  const av    = document.createElement('div'); av.className = 'tile-avatar'; av.textContent = name[0].toUpperCase();
+  noVid.appendChild(av);
 
-        function updateMainVideo() {
-            const mainTile = $('main-video-tile');
-            const mainLabel = $('main-tile-label');
-            mainTile.innerHTML = '';
-            
-            if (pinnedPeerId && peers[pinnedPeerId]?.stream) {
-                const video = ce('video');
-                video.autoplay = true;
-                video.playsinline = true;
-                video.srcObject = peers[pinnedPeerId].stream;
-                
-                const label = ce('span', 'main-tile-label');
-                label.textContent = peers[pinnedPeerId].name;
-                
-                mainTile.appendChild(video);
-                mainTile.appendChild(label);
-            } else {
-                const video = ce('video');
-                video.autoplay = true;
-                video.muted = true;
-                video.playsinline = true;
-                video.srcObject = localStream;
-                
-                const label = ce('span', 'main-tile-label');
-                label.textContent = username + ' (вы)';
-                
-                mainTile.appendChild(video);
-                mainTile.appendChild(label);
-            }
-        }
+  const overlay  = document.createElement('div'); overlay.className = 'tile-overlay';
+  const label    = document.createElement('div'); label.className = 'tile-label'; label.textContent = name;
+  const pingEl   = document.createElement('div'); pingEl.className = 'tile-ping'; pingEl.textContent = '-- ms';
+  const muteIcon = document.createElement('div'); muteIcon.className = 'tile-muted';
+  muteIcon.innerHTML = `<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23" stroke="white" stroke-width="2"/><path fill="white" d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>`;
 
-        // ── Grid layout ───────────────────────────────────────
-        function updateGrid() {
-            const n = document.querySelectorAll('.video-tile').length;
-            const g = $('video-grid');
-            if (n <= 2) g.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
-            else if (n <= 4) g.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
-            else g.style.gridTemplateColumns = 'repeat(auto-fill, minmax(80px, 1fr))';
-        }
+  tile.appendChild(noVid);
+  tile.appendChild(overlay);
+  tile.appendChild(label);
+  tile.appendChild(pingEl);
+  tile.appendChild(muteIcon);
+  grid.appendChild(tile);
+  updateGrid();
+}
 
-        // ── Stats header ───────────────────────────────────────
-        function updateStats() {
-            const count = Object.keys(peers).length + 1;
-            $('stat-participants').textContent = `${count} / 10`;
-            
-            const pings = Object.values(peers)
-                .filter(p => p.ping !== null)
-                .map(p => p.ping);
-            
-            if (pings.length === 0) {
-                $('stat-ping').textContent = '-- ms';
-                return;
-            }
-            
-            const avg = Math.round(pings.reduce((a, b) => a + b, 0) / pings.length);
-            const pingEl = $('stat-ping');
-            pingEl.textContent = avg + ' ms';
-        }
+function attachStream(peerId, stream) {
+  const tile = document.getElementById('tile-' + peerId);
+  if (!tile) return;
 
-        // ── Recording ──────────────────────────────────────────
-        function startRecording() {
-            try {
-                const audioTracks = localStream.getAudioTracks();
-                mediaRecorder = new MediaRecorder(localStream, {
-                    mimeType: 'audio/webm'
-                });
-                
-                recordedChunks = [];
-                mediaRecorder.ondataavailable = e => {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                };
-                
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const a = ce('a');
-                    a.href = url;
-                    a.download = `recording-${Date.now()}.webm`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                };
-                
-                mediaRecorder.start();
-                recordingOn = true;
-                $('btn-record').classList.add('active');
-                toast('🔴 Запись началась');
-            } catch (e) {
-                toast('⚠ Ошибка при начале записи');
-            }
-        }
+  // remove placeholder
+  const placeholder = document.getElementById('novid-' + peerId);
+  if (placeholder) placeholder.remove();
 
-        // ── Controls ───────────────────────────────────────────
-        $('btn-mic').addEventListener('click', () => {
-            micOn = !micOn;
-            localStream.getAudioTracks().forEach(t => t.enabled = micOn);
-            $('btn-mic').classList.toggle('off', !micOn);
-            $('btn-mic').classList.toggle('active', micOn);
-            toast(micOn ? '🔊 Микрофон включен' : '🔇 Микрофон выключен');
-            playSound(micOn ? 700 : 300, 100);
-        });
+  // remove old video if any
+  tile.querySelectorAll('video').forEach(v => v.remove());
 
-        $('btn-cam').addEventListener('click', () => {
-            camOn = !camOn;
-            localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-            $('btn-cam').classList.toggle('off', !camOn);
-            $('btn-cam').classList.toggle('active', camOn);
-            toast(camOn ? '📷 Камера включена' : '📷 Камера выключена');
-            playSound(camOn ? 700 : 300, 100);
-        });
+  const video = document.createElement('video');
+  video.autoplay = true; video.playsinline = true;
+  video.srcObject = stream;
+  tile.insertBefore(video, tile.firstChild);
+}
 
-        $('btn-flip').addEventListener('click', async () => {
-            if (!camOn) {
-                toast('⚠ Сначала включите камеру');
-                return;
-            }
-            
-            try {
-                cameraFront = !cameraFront;
-                const constraints = {
-                    video: {
-                        facingMode: cameraFront ? 'user' : { exact: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: false
-                };
-                
-                const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-                const oldTrack = localStream.getVideoTracks()[0];
-                const newTrack = newStream.getVideoTracks()[0];
-                
-                Object.values(room._peerConnections || {}).forEach(pc => {
-                    const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                    if (sender) sender.replaceTrack(newTrack);
-                });
-                
-                localStream.removeTrack(oldTrack);
-                localStream.addTrack(newTrack);
-                oldTrack.stop();
-                
-                updateMainVideo();
-                toast(cameraFront ? '🔄 Фронтальная камера' : '🔄 Задняя камера');
-                playSound(500, 150);
-            } catch {
-                toast('⚠ Не удалось переключить камеру');
-            }
-        });
+function removeTile(peerId) {
+  const el = document.getElementById('tile-' + peerId);
+  if (el) el.remove();
+  updateGrid();
+}
 
-        $('btn-screen').addEventListener('click', async () => {
-            if (!screenOn) {
-                try {
-                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                    const screenTrack = screenStream.getVideoTracks()[0];
-                    
-                    Object.values(room._peerConnections || {}).forEach(pc => {
-                        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                        if (sender) sender.replaceTrack(screenTrack);
-                    });
-                    
-                    updateMainVideo();
-                    screenOn = true;
-                    $('btn-screen').classList.add('active');
-                    toast('🖥️ Показ экрана начался');
-                    playSound(700, 150);
-                    
-                    screenTrack.onended = () => stopScreen();
-                } catch {
-                    toast('⚠ Отмена показа экрана');
-                }
-            } else {
-                stopScreen();
-            }
-        });
+// ── Grid layout ────────────────────────────────────────────────────────────
+function updateGrid() {
+  const n = document.querySelectorAll('.video-tile').length;
+  const g = $('video-grid');
+  if      (n <= 1) g.style.gridTemplateColumns = '1fr';
+  else if (n <= 4) g.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  else if (n <= 6) g.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  else             g.style.gridTemplateColumns = 'repeat(4, 1fr)';
+}
 
-        function stopScreen() {
-            if (!screenStream) return;
-            screenStream.getTracks().forEach(t => t.stop());
-            screenStream = null;
-            screenOn = false;
-            $('btn-screen').classList.remove('active');
-            
-            const camTrack = localStream.getVideoTracks()[0];
-            if (camTrack) {
-                Object.values(room._peerConnections || {}).forEach(pc => {
-                    const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                    if (sender) sender.replaceTrack(camTrack);
-                });
-            }
-            updateMainVideo();
-            toast('🖥️ Показ экрана завершен');
-            playSound(300, 150);
-        }
+// ── Stats header ───────────────────────────────────────────────────────────
+function updateStats() {
+  const count = Object.keys(peers).length + 1;
+  $('stat-participants').textContent = `${count} / 10`;
 
-        $('btn-record').addEventListener('click', () => {
-            if (!recordingOn) {
-                startRecording();
-                playSound(700, 150);
-            } else {
-                mediaRecorder.stop();
-                recordingOn = false;
-                $('btn-record').classList.remove('active');
-                toast('⏹️ Запись сохранена');
-                playSound(300, 150);
-            }
-        });
+  const pings = Object.values(peers).filter(p => p.ping !== null).map(p => p.ping);
+  if (pings.length === 0) { $('stat-ping').textContent = '-- ms'; return; }
+  const avg = Math.round(pings.reduce((a,b)=>a+b,0)/pings.length);
+  const pingEl = $('stat-ping');
+  pingEl.textContent = avg + ' ms';
+  pingEl.className = avg < 80 ? 'ping-good' : avg < 200 ? 'ping-ok' : 'ping-bad';
+}
 
-        $('btn-leave').addEventListener('click', () => {
-            Object.values(pingTimers).forEach(clearInterval);
-            pingTimers = {};
-            if (mediaRecorder && recordingOn) {
-                mediaRecorder.stop();
-            }
-            if (room) {
-                try { room.leave(); } catch {}
-                room = null;
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(t => t.stop());
-                localStream = null;
-            }
-            if (screenStream) {
-                screenStream.getTracks().forEach(t => t.stop());
-                screenStream = null;
-            }
-            peers = {};
-            $('video-grid').innerHTML = '';
-            digits.forEach(d => {
-                d.value = '';
-                d.classList.remove('filled');
-            });
-            showPage('lobby');
-            toast('👋 Вы вышли из комнаты');
-            playSound(200, 200);
-        });
+// ── Controls ───────────────────────────────────────────────────────────────
+$('btn-mic').addEventListener('click', () => {
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  $('btn-mic').classList.toggle('off', !micOn);
+  $('btn-mic').classList.toggle('active', micOn);
+  $('local-mute')?.classList.toggle('visible', !micOn);
+  toast(micOn ? 'Mic on' : 'Mic muted');
+});
 
-        // ── Public rooms ───────────────────────────────────────
-        function loadPublicRooms() {
-            const list = $('rooms-list');
-            list.innerHTML = '';
-            
-            publicRooms = [
-                { code: '1234', users: 3 },
-                { code: '5678', users: 1 },
-                { code: '9012', users: 5 }
-            ];
-            
-            if (publicRooms.length === 0) {
-                $('no-rooms').style.display = 'block';
-                return;
-            }
-            
-            $('no-rooms').style.display = 'none';
-            publicRooms.forEach(room => {
-                const item = ce('div', 'room-item');
-                item.innerHTML = `
-                    <div class="room-item-info">
-                        <div class="room-item-code">Код: ${room.code}</div>
-                        <div class="room-item-users">👥 ${room.users} участников</div>
-                    </div>
-                `;
-                const btn = ce('button', 'btn btn-primary');
-                btn.style.width = 'auto';
-                btn.style.padding = '8px 16px';
-                btn.textContent = 'Войти';
-                btn.onclick = () => {
-                    digits.forEach((d, i) => {
-                        d.value = room.code[i];
-                        d.classList.add('filled');
-                    });
-                    closeModal('browse-rooms-modal');
-                    enterRoom(room.code);
-                };
-                item.appendChild(btn);
-                list.appendChild(item);
-            });
-        }
+$('btn-cam').addEventListener('click', () => {
+  camOn = !camOn;
+  localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  $('btn-cam').classList.toggle('off', !camOn);
+  $('btn-cam').classList.toggle('active', camOn);
+  toast(camOn ? 'Camera on' : 'Camera off');
+});
 
-        // Close modal on background click
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', e => {
-                if (e.target === modal) closeModal(modal.id);
-            });
-        });
+$('btn-screen').addEventListener('click', async () => {
+  if (!screenOn) {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      // replace video track
+      const sender = room?._peerConnections
+        ? Object.values(room._peerConnections).map(pc =>
+            pc.getSenders().find(s => s.track?.kind === 'video')
+          ).filter(Boolean) : [];
+      sender.forEach(s => s.replaceTrack(screenTrack));
+      // show in local tile
+      const localTile = $('tile-local');
+      if (localTile) {
+        const v = localTile.querySelector('video');
+        if (v) v.srcObject = screenStream;
+      }
+      screenOn = true;
+      $('btn-screen').classList.add('active');
+      screenTrack.onended = () => stopScreen();
+      toast('Screen sharing on');
+    } catch { toast('Screen share cancelled'); }
+  } else {
+    stopScreen();
+  }
+});
 
-        window.closeModal = closeModal;
-    </script>
+function stopScreen() {
+  if (!screenStream) return;
+  screenStream.getTracks().forEach(t => t.stop());
+  screenStream = null;
+  screenOn = false;
+  $('btn-screen').classList.remove('active');
+  // restore camera
+  const camTrack = localStream.getVideoTracks()[0];
+  if (camTrack) {
+    const localTile = $('tile-local');
+    if (localTile) { const v = localTile.querySelector('video'); if (v) v.srcObject = localStream; }
+  }
+  toast('Screen sharing off');
+}
+
+$('btn-leave').addEventListener('click', () => {
+  // cleanup
+  Object.values(pingTimers).forEach(clearInterval);
+  pingTimers = {};
+  if (room) { try { room.leave(); } catch {} room = null; }
+  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  peers = {};
+  $('video-grid').innerHTML = '';
+  digits.forEach(d => { d.value=''; d.classList.remove('filled'); });
+  showPage('lobby');
+  toast('Left the room');
+});
+
+</script>
 </body>
 </html>
