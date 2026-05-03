@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncRoom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080c14;
+      --bg2:       #0d1220;
+      --bg3:       #121929;
+      --surface:   #161f30;
+      --surface2:  #1c2840;
+      --border:    #1e2e4a;
+      --accent:    #00c8ff;
+      --accent2:   #0077ff;
+      --accent-glow: rgba(0, 200, 255, 0.18);
+      --green:     #00e5a0;
+      --red:       #ff4466;
+      --yellow:    #ffcc00;
+      --text:      #ccd6f6;
+      --text2:     #6a7d9f;
+      --mono:      'Space Mono', monospace;
+      --sans:      'Syne', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    /* ── Grid texture overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Pages ── */
+    .page {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transform: translateY(18px);
+      transition: opacity .35s ease, transform .35s ease;
+      z-index: 1;
+    }
+    .page.active {
+      opacity: 1; pointer-events: all; transform: none;
+    }
+    #page-call {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 0;
+    }
+
+    /* ── Auth card ── */
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 52px 52px;
+      width: 420px;
+      position: relative;
+      box-shadow: 0 0 80px rgba(0,100,255,.07), 0 24px 80px rgba(0,0,0,.5);
+    }
+    .auth-card::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 36px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: #fff; }
+    .logo-name {
+      font-size: 18px; font-weight: 800; letter-spacing: -.5px;
+      color: #fff;
+    }
+    .logo-name span { color: var(--accent); }
+
+    .auth-card h1 {
+      font-size: 28px; font-weight: 800; color: #fff;
+      letter-spacing: -.5px; margin-bottom: 8px;
+    }
+    .auth-card p {
+      font-size: 14px; color: var(--text2); margin-bottom: 28px;
+      font-family: var(--mono);
+    }
+
+    .input-group { position: relative; margin-bottom: 14px; }
+    .input-group label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text2); margin-bottom: 8px;
+      font-family: var(--mono);
+    }
+    .input-group input {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; color: var(--text);
+      font-size: 15px; font-family: var(--mono);
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input-group input::placeholder { color: var(--text2); opacity: .6; }
+
+    .btn {
+      width: 100%; padding: 15px; border-radius: 10px;
+      font-size: 14px; font-weight: 700; letter-spacing: .5px;
+      font-family: var(--mono); cursor: pointer; border: none;
+      transition: all .18s ease; position: relative; overflow: hidden;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,200,255,.25);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(0,200,255,.38);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: var(--bg3); color: var(--text2);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--surface2); color: var(--text);
+      border-color: var(--accent);
+    }
+    .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0; color: var(--text2);
+      font-size: 11px; font-family: var(--mono); letter-spacing: 1px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Code digits ── */
+    .code-row {
+      display: flex; gap: 12px; margin-bottom: 28px;
+    }
+    .code-digit {
+      flex: 1; height: 72px;
+      background: var(--bg2); border: 1.5px solid var(--border);
+      border-radius: 12px; color: #fff;
+      font-size: 32px; font-weight: 700; font-family: var(--mono);
+      text-align: center; outline: none;
+      transition: border-color .2s, box-shadow .2s, transform .1s;
+    }
+    .code-digit:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      transform: scale(1.03);
+    }
+    .code-digit.filled {
+      border-color: var(--accent2);
+      color: var(--accent);
+    }
+
+    /* ── User greeting badge ── */
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 14px 6px 10px;
+      font-size: 12px; color: var(--text2); font-family: var(--mono);
+      margin-bottom: 28px;
+    }
+    .user-badge-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    /* ── Call page ── */
+    #page-call { background: var(--bg); }
+
+    .call-header {
+      height: 56px; flex-shrink: 0;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+      z-index: 10;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo { font-size: 15px; font-weight: 800; color: #fff; }
+    .header-logo span { color: var(--accent); }
+    .room-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 12px;
+      font-family: var(--mono); font-size: 13px; color: var(--text);
+    }
+    .room-chip-label { color: var(--text2); font-size: 11px; margin-right: 2px; }
+    .room-chip-code { color: var(--accent); font-weight: 700; letter-spacing: 4px; }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .stat-chip {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 12px;
+      font-family: var(--mono); font-size: 12px; color: var(--text2);
+    }
+    .stat-chip svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .stat-chip span { color: var(--text); }
+    .ping-good { color: var(--green) !important; }
+    .ping-ok   { color: var(--yellow) !important; }
+    .ping-bad  { color: var(--red) !important; }
+
+    .call-main {
+      flex: 1; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+
+    /* ── Video grid ── */
+    #video-grid {
+      display: grid;
+      gap: 12px;
+      width: 100%; height: 100%;
+      grid-template-columns: repeat(1, 1fr);
+      transition: grid-template-columns .3s ease;
+    }
+
+    .video-tile {
+      position: relative;
+      background: var(--surface);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      transition: border-color .2s;
+    }
+    .video-tile:hover { border-color: var(--accent2); }
+    .video-tile.local { border-color: var(--accent2); }
+    .video-tile.local::after {
+      content: '';
+      position: absolute; inset: 0; border-radius: 14px;
+      box-shadow: inset 0 0 0 1.5px var(--accent2);
+      pointer-events: none;
+    }
+
+    .video-tile video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tile-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.65) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .tile-label {
+      position: absolute; bottom: 10px; left: 12px;
+      font-size: 12px; font-weight: 700; font-family: var(--mono);
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,.8);
+      max-width: calc(100% - 80px);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .tile-ping {
+      position: absolute; bottom: 10px; right: 10px;
+      font-family: var(--mono); font-size: 10px;
+      background: rgba(0,0,0,.6); border-radius: 5px;
+      padding: 2px 7px; color: var(--green);
+    }
+
+    .tile-muted {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(255,68,102,.85);
+      display: none; align-items: center; justify-content: center;
+    }
+    .tile-muted.visible { display: flex; }
+    .tile-muted svg { width: 14px; height: 14px; fill: #fff; }
+
+    .tile-no-video {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface);
+    }
+    .tile-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; color: #fff;
+    }
+
+    /* ── Controls bar ── */
+    .call-controls {
+      height: 80px; flex-shrink: 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+
+    .ctrl-btn {
+      width: 52px; height: 52px; border-radius: 14px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .18s ease;
+      position: relative;
+    }
+    .ctrl-btn svg { width: 22px; height: 22px; fill: var(--text); transition: fill .18s; }
+    .ctrl-btn:hover {
+      background: var(--surface2); border-color: var(--accent2);
+      transform: translateY(-2px);
+    }
+    .ctrl-btn:hover svg { fill: #fff; }
+    .ctrl-btn.active {
+      background: var(--surface2); border-color: var(--accent);
+    }
+    .ctrl-btn.active svg { fill: var(--accent); }
+    .ctrl-btn.off {
+      background: rgba(255,68,102,.12); border-color: var(--red);
+    }
+    .ctrl-btn.off svg { fill: var(--red); }
+    .ctrl-btn.danger {
+      background: rgba(255,68,102,.12); border-color: var(--red);
+    }
+    .ctrl-btn.danger svg { fill: var(--red); }
+    .ctrl-btn.danger:hover {
+      background: var(--red); border-color: var(--red);
+      box-shadow: 0 6px 20px rgba(255,68,102,.4);
+    }
+    .ctrl-btn.danger:hover svg { fill: #fff; }
+
+    .ctrl-label {
+      position: absolute; bottom: -22px;
+      font-size: 10px; font-family: var(--mono); color: var(--text2);
+      white-space: nowrap;
+    }
+
+    .ctrl-sep { width: 1px; height: 32px; background: var(--border); margin: 0 6px; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; color: var(--text2);
+    }
+    .empty-state svg { width: 48px; height: 48px; opacity: .3; }
+    .empty-state p { font-size: 13px; font-family: var(--mono); opacity: .6; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 20px;
+      font-family: var(--mono); font-size: 13px; color: var(--text);
+      opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 100;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── Connecting overlay ── */
+    #connecting-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(8,12,20,.9);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+    }
+    #connecting-overlay.show { display: flex; }
+    .spinner {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .connecting-text {
+      font-family: var(--mono); font-size: 13px; color: var(--text2);
+    }
+
+    /* ── Copy button ── */
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid var(--border);
+      border-radius: 7px; padding: 5px 11px;
+      font-family: var(--mono); font-size: 11px; color: var(--text2);
+      cursor: pointer; transition: all .15s;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn svg { width: 11px; height: 11px; }
+
+    /* ── Error ── */
+    .error-msg {
+      font-family: var(--mono); font-size: 12px; color: var(--red);
+      margin-top: 8px; display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ PAGE: USERNAME ═══════════════════════════ -->
+<div id="page-username" class="page active">
+  <div class="auth-card">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      </div>
+      <div class="logo-name">Sync<span>Room</span></div>
+    </div>
+
+    <h1>Welcome aboard</h1>
+    <p>// choose your display name</p>
+
+    <div class="input-group">
+      <label>Display Name</label>
+      <input type="text" id="username-input" placeholder="e.g. alex_dev" maxlength="20" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="error-msg" id="username-error">Name cannot be empty</div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="username-btn">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: LOBBY ═══════════════════════════ -->
+<div id="page-lobby" class="page">
+  <div class="auth-card">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      </div>
+      <div class="logo-name">Sync<span>Room</span></div>
+    </div>
+
+    <div class="user-badge">
+      <div class="user-badge-dot"></div>
+      <span id="lobby-username">anonymous</span>
+    </div>
+
+    <h1>Join a room</h1>
+    <p>// enter 4-digit room code</p>
+
+    <div class="code-row">
+      <input class="code-digit" id="d0" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+      <input class="code-digit" id="d1" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+      <input class="code-digit" id="d2" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+      <input class="code-digit" id="d3" type="text" inputmode="numeric" maxlength="1" autocomplete="off">
+    </div>
+    <div class="error-msg" id="lobby-error">Enter all 4 digits</div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="create-btn">⊕ Create Room</button>
+      <button class="btn btn-primary"   id="join-btn">→ Join</button>
+    </div>
+
+    <div class="divider">or</div>
+
+    <button class="btn btn-secondary" id="change-name-btn" style="width:100%">Change name</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ PAGE: CALL ═══════════════════════════ -->
+<div id="page-call" class="page">
+
+  <!-- Header -->
+  <div class="call-header">
+    <div class="header-left">
+      <div class="header-logo">Sync<span>Room</span></div>
+      <div class="room-chip">
+        <span class="room-chip-label">ROOM</span>
+        <span class="room-chip-code" id="header-room-code">----</span>
+        <button class="copy-btn" id="copy-code-btn" title="Copy code">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          copy
+        </button>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span id="stat-participants">1 / 10</span>
+      </div>
+      <div class="stat-chip" id="ping-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span id="stat-ping">-- ms</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video area -->
+  <div class="call-main">
+    <div id="video-grid"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="call-controls">
+    <div style="position:relative">
+      <button class="ctrl-btn active" id="btn-mic" title="Toggle mic">
+        <svg id="icon-mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8"  y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        <span class="ctrl-label">Mic</span>
+      </button>
+    </div>
+    <div style="position:relative">
+      <button class="ctrl-btn active" id="btn-cam" title="Toggle camera">
+        <svg id="icon-cam" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span class="ctrl-label">Camera</span>
+      </button>
+    </div>
+
+    <div class="ctrl-sep"></div>
+
+    <div style="position:relative">
+      <button class="ctrl-btn" id="btn-screen" title="Share screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span class="ctrl-label">Screen</span>
+      </button>
+    </div>
+
+    <div class="ctrl-sep"></div>
+
+    <div style="position:relative">
+      <button class="ctrl-btn danger" id="btn-leave" title="Leave call">
+        <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.32 9.9a16 16 0 0 0 6.18 6.18"/><line x1="23" y1="1" x2="1" y2="23" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        <span class="ctrl-label">Leave</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Connecting overlay ═══ -->
+<div id="connecting-overlay">
+  <div class="spinner"></div>
+  <div class="connecting-text" id="connecting-text">Connecting to room...</div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div id="toast"></div>
+
+
+<script type="module">
+import { joinRoom } from 'https://esm.sh/trystero@0.21.0/torrent';
+
+// ── State ──────────────────────────────────────────────────────────────────
+let username    = localStorage.getItem('syncroom-username') || '';
+let room        = null;
+let localStream = null;
+let screenStream = null;
+let roomCode    = '';
+let peers       = {};   // peerId → { name, stream, ping, videoEl, pingEl }
+let micOn       = true;
+let camOn       = true;
+let screenOn    = false;
+let pingTimers  = {};
+let sendPingFn  = null;
+let sendNameFn  = null;
+
+// ── DOM helpers ────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-' + id).classList.add('active');
+}
+function showOverlay(msg) {
+  $('connecting-text').textContent = msg || 'Connecting...';
+  $('connecting-overlay').classList.add('show');
+}
+function hideOverlay() {
+  $('connecting-overlay').classList.remove('show');
+}
+function toast(msg, dur = 2500) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+if (username) {
+  $('lobby-username').textContent = username;
+  showPage('lobby');
+} else {
+  showPage('username');
+}
+
+// ── Username page ──────────────────────────────────────────────────────────
+$('username-input').addEventListener('keydown', e => { if (e.key==='Enter') $('username-btn').click(); });
+
+$('username-btn').addEventListener('click', () => {
+  const val = $('username-input').value.trim();
+  if (!val) { $('username-error').classList.add('show'); return; }
+  $('username-error').classList.remove('show');
+  username = val;
+  localStorage.setItem('syncroom-username', username);
+  $('lobby-username').textContent = username;
+  showPage('lobby');
+});
+
+$('change-name-btn').addEventListener('click', () => {
+  $('username-input').value = username;
+  showPage('username');
+});
+
+// ── Code digit inputs ──────────────────────────────────────────────────────
+const digits = [0,1,2,3].map(i => $('d'+i));
+
+digits.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    const v = inp.value.replace(/[^0-9]/g,'');
+    inp.value = v ? v[v.length-1] : '';
+    inp.classList.toggle('filled', !!inp.value);
+    if (inp.value && i < 3) digits[i+1].focus();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace') {
+      if (!inp.value && i > 0) { digits[i-1].value=''; digits[i-1].classList.remove('filled'); digits[i-1].focus(); }
+      inp.classList.remove('filled');
+    }
+    if (e.key === 'Enter') $('join-btn').click();
+  });
+  inp.addEventListener('paste', e => {
+    const data = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,4);
+    if (data.length === 4) {
+      digits.forEach((d,j) => { d.value = data[j]||''; d.classList.toggle('filled', !!d.value); });
+      digits[3].focus();
+    }
+    e.preventDefault();
+  });
+});
+
+function getCode() { return digits.map(d => d.value).join(''); }
+
+$('create-btn').addEventListener('click', () => {
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  digits.forEach((d,i) => { d.value = code[i]; d.classList.add('filled'); });
+  enterRoom(code);
+});
+
+$('join-btn').addEventListener('click', () => {
+  const code = getCode();
+  if (code.length < 4) { $('lobby-error').classList.add('show'); return; }
+  $('lobby-error').classList.remove('show');
+  enterRoom(code);
+});
+
+// ── Enter room ─────────────────────────────────────────────────────────────
+async function enterRoom(code) {
+  showOverlay('Requesting camera & mic...');
+  roomCode = code;
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+      toast('📷 Camera unavailable — audio only');
+    } catch {
+      hideOverlay();
+      toast('⚠ Could not access microphone');
+      return;
+    }
+  }
+
+  $('header-room-code').textContent = code;
+  $('copy-code-btn').onclick = () => { navigator.clipboard.writeText(code); toast('Room code copied!'); };
+
+  addLocalTile();
+  showOverlay('Joining room ' + code + '...');
+
+  // ── Join Trystero room ──
+  room = joinRoom({ appId: 'syncroom-v1-prod' }, code);
+
+  const [sendPing, onPing]     = room.makeAction('ping');
+  const [sendPong, onPong]     = room.makeAction('pong');
+  const [sendName, onName]     = room.makeAction('name');
+  const [sendMeta, onMeta]     = room.makeAction('meta');
+
+  sendPingFn = sendPing;
+  sendNameFn = sendName;
+
+  // ── Peer join ──
+  room.onPeerJoin(peerId => {
+    if (Object.keys(peers).length >= 9) {
+      toast('Room is full (10/10)');
+      return;
+    }
+    peers[peerId] = { name: 'Peer…', stream: null, ping: null };
+    addRemoteTile(peerId);
+    // share local stream
+    room.addStream(localStream, peerId);
+    // introduce ourselves
+    sendName(username, peerId);
+    // start pinging
+    startPing(peerId);
+    updateStats();
+    toast('Someone joined the room');
+  });
+
+  // ── Peer leave ──
+  room.onPeerLeave(peerId => {
+    clearInterval(pingTimers[peerId]);
+    delete pingTimers[peerId];
+    removeTile(peerId);
+    delete peers[peerId];
+    updateStats();
+    toast('Someone left the room');
+  });
+
+  // ── Receive stream ──
+  room.onStream((stream, peerId) => {
+    if (!peers[peerId]) peers[peerId] = { name: 'Peer', stream: null, ping: null };
+    peers[peerId].stream = stream;
+    attachStream(peerId, stream);
+  });
+
+  // ── Receive name ──
+  onName((name, peerId) => {
+    if (!peers[peerId]) peers[peerId] = { name, stream: null, ping: null };
+    peers[peerId].name = name;
+    const label = document.querySelector(`#tile-${CSS.escape(peerId)} .tile-label`);
+    if (label) label.textContent = name;
+  });
+
+  // ── Ping / pong ──
+  onPing((data, peerId) => {
+    sendPong({ ts: data.ts }, peerId);
+  });
+  onPong((data, peerId) => {
+    const rtt = Date.now() - data.ts;
+    if (peers[peerId]) {
+      peers[peerId].ping = rtt;
+      const el = document.querySelector(`#tile-${CSS.escape(peerId)} .tile-ping`);
+      if (el) {
+        el.textContent = rtt + ' ms';
+        el.style.color = rtt < 80 ? 'var(--green)' : rtt < 200 ? 'var(--yellow)' : 'var(--red)';
+      }
+    }
+    updateStats();
+  });
+
+  showPage('call');
+  hideOverlay();
+  updateStats();
+  updateGrid();
+}
+
+function startPing(peerId) {
+  pingTimers[peerId] = setInterval(() => {
+    if (sendPingFn) sendPingFn({ ts: Date.now() }, peerId);
+  }, 2000);
+}
+
+// ── Video tiles ────────────────────────────────────────────────────────────
+function addLocalTile() {
+  const grid = $('video-grid');
+  grid.innerHTML = '';
+
+  const tile = makeTile('local', username + ' (you)');
+  tile.classList.add('local');
+
+  const video = document.createElement('video');
+  video.autoplay = true; video.muted = true; video.playsinline = true;
+  video.srcObject = localStream;
+
+  const overlay  = document.createElement('div'); overlay.className = 'tile-overlay';
+  const label    = document.createElement('div'); label.className = 'tile-label'; label.textContent = username + ' (you)';
+  const muteIcon = document.createElement('div'); muteIcon.className = 'tile-muted'; muteIcon.id = 'local-mute';
+  muteIcon.innerHTML = `<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23" stroke="white" stroke-width="2"/><path fill="white" d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path fill="none" stroke="white" stroke-width="2" d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line stroke="white" stroke-width="2" x1="12" y1="19" x2="12" y2="23"/><line stroke="white" stroke-width="2" x1="8" y1="23" x2="16" y2="23"/></svg>`;
+
+  tile.appendChild(video);
+  tile.appendChild(overlay);
+  tile.appendChild(label);
+  tile.appendChild(muteIcon);
+  grid.appendChild(tile);
+}
+
+function makeTile(peerId, name) {
+  const tile = document.createElement('div');
+  tile.className = 'video-tile';
+  tile.id = 'tile-' + peerId;
+  return tile;
+}
+
+function addRemoteTile(peerId) {
+  const grid = $('video-grid');
+  const name = peers[peerId]?.name || 'Connecting…';
+  const tile = makeTile(peerId, name);
+
+  // placeholder while stream loads
+  const noVid = document.createElement('div'); noVid.className = 'tile-no-video'; noVid.id = 'novid-'+peerId;
+  const av    = document.createElement('div'); av.className = 'tile-avatar'; av.textContent = name[0].toUpperCase();
+  noVid.appendChild(av);
+
+  const overlay  = document.createElement('div'); overlay.className = 'tile-overlay';
+  const label    = document.createElement('div'); label.className = 'tile-label'; label.textContent = name;
+  const pingEl   = document.createElement('div'); pingEl.className = 'tile-ping'; pingEl.textContent = '-- ms';
+  const muteIcon = document.createElement('div'); muteIcon.className = 'tile-muted';
+  muteIcon.innerHTML = `<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23" stroke="white" stroke-width="2"/><path fill="white" d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>`;
+
+  tile.appendChild(noVid);
+  tile.appendChild(overlay);
+  tile.appendChild(label);
+  tile.appendChild(pingEl);
+  tile.appendChild(muteIcon);
+  grid.appendChild(tile);
+  updateGrid();
+}
+
+function attachStream(peerId, stream) {
+  const tile = document.getElementById('tile-' + peerId);
+  if (!tile) return;
+
+  // remove placeholder
+  const placeholder = document.getElementById('novid-' + peerId);
+  if (placeholder) placeholder.remove();
+
+  // remove old video if any
+  tile.querySelectorAll('video').forEach(v => v.remove());
+
+  const video = document.createElement('video');
+  video.autoplay = true; video.playsinline = true;
+  video.srcObject = stream;
+  tile.insertBefore(video, tile.firstChild);
+}
+
+function removeTile(peerId) {
+  const el = document.getElementById('tile-' + peerId);
+  if (el) el.remove();
+  updateGrid();
+}
+
+// ── Grid layout ────────────────────────────────────────────────────────────
+function updateGrid() {
+  const n = document.querySelectorAll('.video-tile').length;
+  const g = $('video-grid');
+  if      (n <= 1) g.style.gridTemplateColumns = '1fr';
+  else if (n <= 4) g.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  else if (n <= 6) g.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  else             g.style.gridTemplateColumns = 'repeat(4, 1fr)';
+}
+
+// ── Stats header ───────────────────────────────────────────────────────────
+function updateStats() {
+  const count = Object.keys(peers).length + 1;
+  $('stat-participants').textContent = `${count} / 10`;
+
+  const pings = Object.values(peers).filter(p => p.ping !== null).map(p => p.ping);
+  if (pings.length === 0) { $('stat-ping').textContent = '-- ms'; return; }
+  const avg = Math.round(pings.reduce((a,b)=>a+b,0)/pings.length);
+  const pingEl = $('stat-ping');
+  pingEl.textContent = avg + ' ms';
+  pingEl.className = avg < 80 ? 'ping-good' : avg < 200 ? 'ping-ok' : 'ping-bad';
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+$('btn-mic').addEventListener('click', () => {
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  $('btn-mic').classList.toggle('off', !micOn);
+  $('btn-mic').classList.toggle('active', micOn);
+  $('local-mute')?.classList.toggle('visible', !micOn);
+  toast(micOn ? 'Mic on' : 'Mic muted');
+});
+
+$('btn-cam').addEventListener('click', () => {
+  camOn = !camOn;
+  localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  $('btn-cam').classList.toggle('off', !camOn);
+  $('btn-cam').classList.toggle('active', camOn);
+  toast(camOn ? 'Camera on' : 'Camera off');
+});
+
+$('btn-screen').addEventListener('click', async () => {
+  if (!screenOn) {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      // replace video track
+      const sender = room?._peerConnections
+        ? Object.values(room._peerConnections).map(pc =>
+            pc.getSenders().find(s => s.track?.kind === 'video')
+          ).filter(Boolean) : [];
+      sender.forEach(s => s.replaceTrack(screenTrack));
+      // show in local tile
+      const localTile = $('tile-local');
+      if (localTile) {
+        const v = localTile.querySelector('video');
+        if (v) v.srcObject = screenStream;
+      }
+      screenOn = true;
+      $('btn-screen').classList.add('active');
+      screenTrack.onended = () => stopScreen();
+      toast('Screen sharing on');
+    } catch { toast('Screen share cancelled'); }
+  } else {
+    stopScreen();
+  }
+});
+
+function stopScreen() {
+  if (!screenStream) return;
+  screenStream.getTracks().forEach(t => t.stop());
+  screenStream = null;
+  screenOn = false;
+  $('btn-screen').classList.remove('active');
+  // restore camera
+  const camTrack = localStream.getVideoTracks()[0];
+  if (camTrack) {
+    const localTile = $('tile-local');
+    if (localTile) { const v = localTile.querySelector('video'); if (v) v.srcObject = localStream; }
+  }
+  toast('Screen sharing off');
+}
+
+$('btn-leave').addEventListener('click', () => {
+  // cleanup
+  Object.values(pingTimers).forEach(clearInterval);
+  pingTimers = {};
+  if (room) { try { room.leave(); } catch {} room = null; }
+  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  peers = {};
+  $('video-grid').innerHTML = '';
+  digits.forEach(d => { d.value=''; d.classList.remove('filled'); });
+  showPage('lobby');
+  toast('Left the room');
+});
+
+</script>
+</body>
+</html>
