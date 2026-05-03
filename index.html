@@ -751,7 +751,7 @@ async function enterRoom(code) {
   });
 
   // ── Receive stream ──
-  room.onStream((stream, peerId) => {
+  room.onPeerStream((stream, peerId) => {
     if (!peers[peerId]) peers[peerId] = { name: 'Peer', stream: null, ping: null };
     peers[peerId].stream = stream;
     attachStream(peerId, stream);
